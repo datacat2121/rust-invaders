@@ -1,6 +1,10 @@
 use std::fs;
 use std::io;
+use std::io::BufReader;
+use std::io::BufWriter;
+use std::io::Read;
 use serde::Deserialize;
+use std::io::Write;
 
 #[derive(Debug, Deserialize)]
 struct Opcode {
@@ -14,7 +18,9 @@ struct Opcode {
 fn main() {
 
     //This is the first 128 bytes of the rom.
-    let rom_path = String::from("invaders128");
+    //let rom_path = String::from("invaders128");
+    let rom_path = String::from("invaders.h");
+    let csv_path = String::from("opcodes.csv");
     let rom: Vec<u8> = loop {
         //Uncomment below to ask for rom file.
         /*let mut rom_path = String::new();
@@ -40,28 +46,81 @@ fn main() {
         break rom
     };
 
-    println!("{}", rom.len());
+    println!("{}", &rom.len());
 
-    //Error handling?
-    if let Err(err) = example() {
-        println!("error running example: {}", err);
-        std::process::exit(1);
-    }
-}
-
-fn opcode_loader(file: String) /*-> Vec<Opcode>*/ {
-    let csv: fs::File = loop {
-        let csv = match fs::File::open(&file) {
-            Ok(out) => out,
-            Err(_) => {
-                println!("Unable to load opcodes.");
-                continue
-            }
-        };
-        break csv
+    let opcodes = match opcode_loader(&csv_path) {
+        Ok(out) => out,
+        Err(_) => {
+            println!("Loading opcodes.csv failed.");
+            Vec::new()
+        },
     };
+
+    println!("{:?}", &opcodes);
+
+    disassembler(&rom, &opcodes);
 }
 
+fn opcode_loader(file: &String) -> Result<Vec<Opcode>, Box<dyn std::error::Error>> {
+    let mut opcode_vec: Vec<Opcode> = Vec::new();
+    let file = fs::File::open(file)?;
+    let mut rdr = csv::Reader::from_reader(file);
+    for result in rdr.deserialize() {
+        let entry: Opcode = result?;
+        opcode_vec.push(entry);
+    }
+    Ok(opcode_vec)
+
+}
+
+fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std::error::Error>> {
+    //let rom_assembly = fs::File::create("invaders.txt")?;
+    let rom_assembly = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open("invaders.txt")
+        .expect("Unable to create disassembled file.");
+    let mut rom_buffer = BufWriter::new(&rom_assembly);
+    let mut i: i32 = 0;
+    loop {
+        /*if i >= rom.len() as i32 + 1 {
+            break
+        }*/
+        write!(&mut rom_buffer, "{}", opcodes[rom[i as usize] as usize].comm).expect("Unable to write into buffer.");
+        match opcodes[rom[i as usize] as usize].size {
+            1 => {
+                write!(&mut rom_buffer, "\n").expect("Unable to write into buffer.");
+                i += 1;
+                if i >= rom.len() as i32 {
+                    break
+                }
+                continue
+            },
+            2 => {
+                write!(&mut rom_buffer, " {}\n", rom[i as usize+1]).expect("Unable to write into buffer.");
+                i += 2;
+                if i >= rom.len() as i32 {
+                    break
+                }
+                continue
+            },
+            3 => {
+                write!(&mut rom_buffer, " {} {}\n", rom[i as usize+1], rom[i as usize+2]).expect("Unable to write into buffer.");
+                i += 3;
+                if i >= rom.len() as i32 {
+                    break
+                }
+                continue
+            },
+            _ => {},
+
+        }
+        
+    }
+    Ok(())
+}
+/*
 //What's happening here?
 fn example() -> Result<(), Box<dyn std::error::Error>> {
     let file = fs::File::open("opcodes.csv")?;
@@ -73,4 +132,4 @@ fn example() -> Result<(), Box<dyn std::error::Error>> {
         println!("{:?}", record);
     }
     Ok(())
-}
+}*/
