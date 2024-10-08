@@ -1,15 +1,15 @@
 use std::fs;
-use std::io;
-use std::io::BufReader;
+//use std::io;
+//use std::io::BufReader;
 use std::io::BufWriter;
-use std::io::Read;
+//use std::io::Read;
 use serde::Deserialize;
 use std::io::Write;
 
 #[derive(Debug, Deserialize)]
 struct Opcode {
-    #[serde(rename = "Opcode")]
-    opcode: u8,
+    /*#[serde(rename = "Opcode")]
+    opcode: u8,*/
     #[serde(rename = "Instruction")]
     comm: String,
     size: u8,
@@ -46,7 +46,7 @@ fn main() {
         break rom
     };
 
-    println!("{}", &rom.len());
+    //println!("{}", &rom.len());
 
     let opcodes = match opcode_loader(&csv_path) {
         Ok(out) => out,
@@ -56,9 +56,16 @@ fn main() {
         },
     };
 
-    println!("{:?}", &opcodes);
+    //println!("{:?}", &opcodes);
 
-    disassembler(&rom, &opcodes);
+    match disassembler(&rom, &opcodes){
+        Ok(_) => {
+            println!("ROM disassembled successfully!")
+        },
+        Err(_) => {
+            println!("ROM disassembly failed.")
+        },
+    };
 }
 
 fn opcode_loader(file: &String) -> Result<Vec<Opcode>, Box<dyn std::error::Error>> {
