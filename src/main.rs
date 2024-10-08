@@ -89,7 +89,7 @@ fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std:
         .open("invaders.txt")
         .expect("Unable to create disassembled file.");
     let mut rom_buffer = BufWriter::new(&rom_assembly);
-    let mut i: i32 = 0;
+    let mut i: u32 = 0;
     loop {
         /*if i >= rom.len() as i32 + 1 {
             break
@@ -99,7 +99,7 @@ fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std:
             1 => {
                 write!(&mut rom_buffer, "\n").expect("Unable to write into buffer.");
                 i += 1;
-                if i >= rom.len() as i32 {
+                if i >= rom.len() as u32 {
                     break
                 }
                 continue
@@ -107,7 +107,7 @@ fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std:
             2 => {
                 write!(&mut rom_buffer, " {}\n", rom[i as usize+1]).expect("Unable to write into buffer.");
                 i += 2;
-                if i >= rom.len() as i32 {
+                if i >= rom.len() as u32 {
                     break
                 }
                 continue
@@ -115,7 +115,7 @@ fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std:
             3 => {
                 write!(&mut rom_buffer, " {} {}\n", rom[i as usize+1], rom[i as usize+2]).expect("Unable to write into buffer.");
                 i += 3;
-                if i >= rom.len() as i32 {
+                if i >= rom.len() as u32 {
                     break
                 }
                 continue
