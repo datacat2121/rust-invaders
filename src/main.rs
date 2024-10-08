@@ -17,8 +17,6 @@ struct Opcode {
 
 fn main() {
 
-    //This is the first 128 bytes of the rom.
-    //let rom_path = String::from("invaders128");
     let rom_path = String::from("invaders.h");
     let csv_path = String::from("opcodes.csv");
     let rom: Vec<u8> = loop {
@@ -46,6 +44,7 @@ fn main() {
         break rom
     };
 
+    //Debug
     //println!("{}", &rom.len());
 
     let opcodes = match opcode_loader(&csv_path) {
@@ -56,6 +55,7 @@ fn main() {
         },
     };
 
+    //Debug
     //println!("{:?}", &opcodes);
 
     match disassembler(&rom, &opcodes){
@@ -81,7 +81,7 @@ fn opcode_loader(file: &String) -> Result<Vec<Opcode>, Box<dyn std::error::Error
 }
 
 fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std::error::Error>> {
-    //let rom_assembly = fs::File::create("invaders.txt")?;
+
     let rom_assembly = fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -91,52 +91,34 @@ fn disassembler(rom: &Vec<u8>, opcodes: &Vec<Opcode>) -> Result<(), Box<dyn std:
     let mut rom_buffer = BufWriter::new(&rom_assembly);
     let mut i: usize = 0;
     loop {
-        /*if i >= rom.len() as i32 + 1 {
+        if i >= rom.len() {
             break
-        }*/
-        write!(&mut rom_buffer, "{}", opcodes[rom[i] as usize].comm).expect("Unable to write into buffer.");
-        match opcodes[rom[i] as usize].size {
-            1 => {
-                write!(&mut rom_buffer, "\n").expect("Unable to write into buffer.");
-                i += 1;
-                if i >= rom.len() {
-                    break
+        }
+
+        let byte = rom[i] as usize;
+        let byte_size = opcodes[byte as usize].size;
+
+        write!(&mut rom_buffer, "{}", opcodes[byte].comm)?;
+
+        match byte_size {
+            1 | 2 | 3 => {
+                if byte_size > 1 {
+                    write!(&mut rom_buffer, " $")?;
                 }
-                continue
-            },
-            2 => {
-                write!(&mut rom_buffer, " {}\n", rom[i+1]).expect("Unable to write into buffer.");
-                i += 2;
-                if i >= rom.len() {
-                    break
+                for j in Iterator::rev(2..=byte_size) {
+                    write!(&mut rom_buffer, "{:02x}", rom[i+j as usize - 1])?;
                 }
-                continue
+                //write!(&mut rom_buffer, "\n");
+                writeln!(&mut rom_buffer, "")?;
+                i += byte_size as usize;
             },
-            3 => {
-                write!(&mut rom_buffer, " {} {}\n", rom[i+1], rom[i+2]).expect("Unable to write into buffer.");
-                i += 3;
-                if i >= rom.len() {
-                    break
-                }
-                continue
+            len => {
+                //into() converts String to the error type.
+                return Err(format!("Invalid length of {}.", len).into())
             },
-            _ => {},
 
         }
         
     }
     Ok(())
 }
-/*
-//What's happening here?
-fn example() -> Result<(), Box<dyn std::error::Error>> {
-    let file = fs::File::open("opcodes.csv")?;
-    let mut rdr = csv::Reader::from_reader(file);
-    for result in rdr.deserialize() {
-        // Notice that we need to provide a type hint for automatic
-        // deserialization.
-        let record: Opcode = result?;
-        println!("{:?}", record);
-    }
-    Ok(())
-}*/
